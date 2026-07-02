@@ -74,3 +74,23 @@ button {
   background: #eef5ff;
   border-color: #0066cc;
 }
+
+.clickable-center {
+  cursor: pointer;
+  user-select: none;
+}
+
+.clickable-center:hover {
+  background: #eef6ff;
+}
+
+.download-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.download-buttons button {
+  flex: 1;
+  margin-top: 0;
+}

@@ -25,7 +25,7 @@
       value="100"
     />
 
-    <div id="centerStatus">Center: Not selected</div>
+    <div id="centerStatus" class="clickable-center">📍 Center: Click to select</div>
 
     <label>Regions (comma separated)</label>
     <input id="regions" type="text" placeholder="W6/SC,W6/CC" />
@@ -42,10 +42,12 @@
     <label>Max Activations</label>
     <input id="maxActivations" type="number" />
 
-    <button id="pickCenterBtn">Pick Center</button>
     <button id="searchBtn">Search Summits</button>
-    <button id="downloadBtn">Download GPX</button>
-    <button id="downloadGeoJSONBtn">Download GeoJSON</button>
+
+    <div class="download-buttons">
+      <button id="downloadBtn">GPX</button>
+      <button id="downloadGeoJSONBtn">GeoJSON</button>
+    </div>
 
     <div id="results"></div>
   </div>

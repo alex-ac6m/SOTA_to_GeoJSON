@@ -16,7 +16,7 @@ const radiusSlider = document.getElementById("radiusSlider");
 document.getElementById("searchBtn").addEventListener("click", searchSummits);
 document.getElementById("downloadBtn").addEventListener("click", downloadGPX);
 document.getElementById("downloadGeoJSONBtn").addEventListener("click", downloadGeoJSON);
-document.getElementById("pickCenterBtn").addEventListener("click", enableCenterSelection);
+document.getElementById("centerStatus").addEventListener("click", enableCenterSelection);
 
 radiusInput.addEventListener("input", syncRadiusFromInput);
 radiusSlider.addEventListener("input", syncRadiusFromSlider);
@@ -80,7 +80,7 @@ function loadSummits() {
 function enableCenterSelection() {
   centerLocked = false;
   document.getElementById("centerStatus").innerHTML =
-    "Center: Click map to select";
+    "📍 Center: Click map to select";
 }
 
 function onMapClick(e) {
@@ -96,7 +96,7 @@ function onMapClick(e) {
   updateRadiusCircle();
 
   document.getElementById("centerStatus").innerHTML =
-    `Center: ${centerLat.toFixed(5)}, ${centerLon.toFixed(5)}`;
+    `📍 Center: ${centerLat.toFixed(5)}, ${centerLon.toFixed(5)}`;
 
   centerLocked = true;
 }
