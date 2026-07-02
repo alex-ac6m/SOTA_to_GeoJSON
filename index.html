@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>SOTA Map Tool</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet/dist/leaflet.css"
+  />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div id="container">
+  <div id="sidebar">
+    <h2>SOTA Map Tool</h2>
+
+    <label>Radius (miles)</label>
+    <input id="radius" type="number" value="100" min="10" max="100" />
+
+    <input
+      id="radiusSlider"
+      type="range"
+      min="10"
+      max="100"
+      step="5"
+      value="100"
+    />
+
+    <div id="centerStatus">Center: Not selected</div>
+
+    <label>Regions (comma separated)</label>
+    <input id="regions" type="text" placeholder="W6/SC,W6/CC" />
+
+    <label>Min Points</label>
+    <input id="minPoints" type="number" />
+
+    <label>Max Points</label>
+    <input id="maxPoints" type="number" />
+
+    <label>Min Activations</label>
+    <input id="minActivations" type="number" />
+
+    <label>Max Activations</label>
+    <input id="maxActivations" type="number" />
+
+    <button id="pickCenterBtn">Pick Center</button>
+    <button id="searchBtn">Search Summits</button>
+    <button id="downloadBtn">Download GPX</button>
+    <button id="downloadGeoJSONBtn">Download GeoJSON</button>
+
+    <div id="results"></div>
+  </div>
+
+  <div id="map"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
