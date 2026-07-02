@@ -44,13 +44,13 @@ function syncRadiusFromSlider() {
 }
 
 function initMap() {
-  map = L.map('map').setView([37.3, -122.0], 8);
+  map = L.map("map").setView([37.3, -122.0], 8);
 
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 18
   }).addTo(map);
 
-  map.on('click', onMapClick);
+  map.on("click", onMapClick);
 }
 
 function loadSummits() {
@@ -58,7 +58,7 @@ function loadSummits() {
     download: true,
     header: true,
     skipEmptyLines: true,
-    beforeFirstChunk: chunk => chunk.split('\n').slice(1).join('\n'),
+    beforeFirstChunk: chunk => chunk.split("\n").slice(1).join("\n"),
     complete: results => {
       summits = results.data
         .filter(row => row.SummitCode)
@@ -69,7 +69,7 @@ function loadSummits() {
           longitude: parseFloat(row.Longitude),
           points: parseInt(row.Points),
           activationCount: parseInt(row.ActivationCount) || 0,
-          region: row.SummitCode.split('-')[0]
+          region: row.SummitCode.split("-")[0]
         }));
 
       console.log(`Loaded ${summits.length} summits`);
@@ -79,6 +79,8 @@ function loadSummits() {
 
 function enableCenterSelection() {
   centerLocked = false;
+  document.getElementById("centerStatus").innerHTML =
+    "Center: Click map to select";
 }
 
 function onMapClick(e) {
@@ -111,7 +113,6 @@ function updateRadiusCircle() {
 
 function distanceMiles(lat1, lon1, lat2, lon2) {
   const R = 3958.8;
-
   const toRad = deg => deg * Math.PI / 180;
 
   lat1 = toRad(lat1);
@@ -176,11 +177,16 @@ function clearSummitMarkers() {
   summitMarkers = [];
 }
 
+function getSotlAsUrl(summitCode) {
+  return `https://sotl.as/summits/${summitCode}`;
+}
+
 function renderSummits() {
   clearSummitMarkers();
 
   filteredSummits.forEach(summit => {
     const color = summit.activationCount > 0 ? "blue" : "red";
+    const sotlAsUrl = getSotlAsUrl(summit.summitCode);
 
     const marker = L.circleMarker([summit.latitude, summit.longitude], {
       radius: 6,
@@ -188,24 +194,88 @@ function renderSummits() {
     }).addTo(map);
 
     marker.bindPopup(`
-      <b>${summit.summitName}</b><br>
-      Code: ${summit.summitCode}<br>
+      <b>${escapeHtml(summit.summitName)}</b><br>
+      Code: ${escapeHtml(summit.summitCode)}<br>
       Points: ${summit.points}<br>
       Activations: ${summit.activationCount}<br>
-      Distance: ${summit.distance.toFixed(1)} mi
+      Distance: ${summit.distance.toFixed(1)} mi<br>
+      <a href="${sotlAsUrl}" target="_blank" rel="noopener noreferrer">Open in SOTL.as</a>
     `);
 
     summitMarkers.push(marker);
   });
 }
 
+function percentile(values, percentileValue) {
+  if (values.length === 0) return null;
+
+  const sorted = [...values].sort((a, b) => a - b);
+  const index = (percentileValue / 100) * (sorted.length - 1);
+  const lower = Math.floor(index);
+  const upper = Math.ceil(index);
+
+  if (lower === upper) return sorted[lower];
+
+  const weight = index - lower;
+  return sorted[lower] * (1 - weight) + sorted[upper] * weight;
+}
+
+function formatNumber(value) {
+  if (value === null || value === undefined || Number.isNaN(value)) return "n/a";
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+function activationStatButton(value) {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "n/a";
+  }
+
+  const roundedValue = Math.round(value);
+  return `
+    <button
+      type="button"
+      class="stat-button"
+      onclick="setMinActivations(${roundedValue})"
+      title="Use ${roundedValue} as the minimum activation count"
+    >
+      ${formatNumber(value)}
+    </button>
+  `;
+}
+
+function setMinActivations(value) {
+  document.getElementById("minActivations").value = value;
+}
+
 function updateResults() {
-  document.getElementById("results").innerHTML =
-    `<p><b>${filteredSummits.length}</b> summits found</p>`;
+  const activatedSummits = filteredSummits.filter(s => s.activationCount > 0);
+  const activated = activatedSummits.length;
+  const unactivated = filteredSummits.length - activated;
+
+  const activationCounts = activatedSummits.map(s => s.activationCount);
+  const p25 = percentile(activationCounts, 25);
+  const p50 = percentile(activationCounts, 50);
+  const p90 = percentile(activationCounts, 90);
+  const maxActivations = activationCounts.length ? Math.max(...activationCounts) : null;
+
+  document.getElementById("results").innerHTML = `
+    <p><b>${filteredSummits.length}</b> summits found</p>
+    <p>Activated: ${activated}</p>
+    <p>Unactivated: ${unactivated}</p>
+
+    <h3>Activation Count Stats</h3>
+    <p>Activated summits only. Click a value to use it as Min Activations.</p>
+    <ul>
+      <li>25th percentile: ${activationStatButton(p25)} activations</li>
+      <li>50th percentile: ${activationStatButton(p50)} activations</li>
+      <li>90th percentile: ${activationStatButton(p90)} activations</li>
+      <li>Maximum: ${activationStatButton(maxActivations)} activations</li>
+    </ul>
+  `;
 }
 
 function escapeXml(str) {
-  return str
+  return String(str)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
@@ -213,19 +283,34 @@ function escapeXml(str) {
     .replace(/'/g, "&apos;");
 }
 
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function generateGPX() {
   let gpx = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="SOTA Map Tool">`;
 
   filteredSummits.forEach(summit => {
+    const sotlAsUrl = getSotlAsUrl(summit.summitCode);
+
     gpx += `
   <wpt lat="${summit.latitude}" lon="${summit.longitude}">
     <name>${escapeXml(summit.summitName)}</name>
-    <desc>${escapeXml(`${summit.summitCode} | ${summit.points} pts | Activations: ${summit.activationCount}`)}</desc>
+    <desc>${escapeXml(
+      `${summit.summitCode} | ${summit.points} pts | Activations: ${summit.activationCount} | ${sotlAsUrl}`
+    )}</desc>
   </wpt>`;
   });
 
-  gpx += `</gpx>`;
+  gpx += `
+</gpx>`;
+
   return gpx;
 }
 
@@ -250,28 +335,34 @@ function generateGeoJSON() {
   const currentTime = Date.now();
 
   return {
-    features: filteredSummits.map(summit => ({
-      geometry: {
-        coordinates: [summit.longitude, summit.latitude, 0, 0],
-        type: "Point"
-      },
-      type: "Feature",
-      properties: {
-        creator: "SOTA Map Tool",
-        "-created-on": currentTime,
-        "-updated-on": currentTime,
-        description: `SOTA Summit Code: ${summit.summitCode}\nActivation Count: ${summit.activationCount}`,
-        title: summit.summitName,
-        "marker-size": "1",
-        folderId: null,
-        "marker-rotation": null,
-        "marker-symbol": `circle-${summit.points}`,
-        name: summit.summitName,
-        "marker-color": summit.activationCount > 0 ? "0000FF" : "FF0000",
-        class: "Marker",
-        updated: currentTime
-      }
-    }))
+    features: filteredSummits.map(summit => {
+      const sotlAsUrl = getSotlAsUrl(summit.summitCode);
+
+      return {
+        geometry: {
+          coordinates: [summit.longitude, summit.latitude, 0, 0],
+          type: "Point"
+        },
+        type: "Feature",
+        properties: {
+          creator: "SOTA Map Tool",
+          "-created-on": currentTime,
+          "-updated-on": currentTime,
+          description:
+            `SOTA Summit Code: ${summit.summitCode}\n` +
+            `Activation Count: ${summit.activationCount}\n` +
+            `SOTL.as: ${sotlAsUrl}`,
+          title: summit.summitName,
+          "marker-size": "1",
+          folderId: null,
+          "marker-rotation": null,
+          "marker-symbol": `circle-${summit.points}`,
+          "marker-color": summit.activationCount > 0 ? "0000FF" : "FF0000",
+          class: "Marker",
+          updated: currentTime
+        }
+      };
+    })
   };
 }
 
